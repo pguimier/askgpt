@@ -4,22 +4,39 @@ import json
 import requests
 import configparser
 import os
+import cmd
 
-_VERSION = 0.1
+is_termcolor = False
+try:
+    from termcolor import colored, cprint
+    is_termcolor = True
+except ImportError:
+    pass
+
+try:
+    import gnureadline
+    import sys
+    sys.modules['readline'] = gnureadline
+except ImportError:
+    pass
+
+_VERSION = 0.2
+_RELDATE = "2023-02-10"
 
 userhome = os.path.expanduser('~')
 configPath = userhome + '/.config/askgpt/'
 configFile = configPath + 'config.cfg'
 config = configparser.ConfigParser()
 
-models = {
-        1 : "text-ada-001",
-        2 : "text-babbage-001",
-        3 : "text-curie-001",
-        4 : "text-davinci-003",
-        5 : "code-davinci-002",
-        6 : "code-cushman-001",
-          }
+models = [
+    "text-ada-001",
+    "text-babbage-001",
+    "text-curie-001",
+    "text-davinci-003",
+    "code-davinci-002",
+    "code-cushman-001",
+]
+
 
 default_config = """
 [Api]
@@ -56,26 +73,74 @@ def set_apikey():
         config.set('Api', 'key', str(api_key))
         write_config()
 
-def set_tokens():
-    tokens = int(input("max tokens [default : " + config.get('Params', 'tokens') + "]: "))
-    if tokens:
+def set_tokens(tokens = None):
+    if tokens is None:
+        print (c("Enter an integer (max 4096 for text-davinci-003)", "yellow"))
+        try:
+            tokens = int(input("max tokens [default : " + config.get('Params', 'tokens') + "]: "))
+        except ValueError:
+            tokens = config.get('Params', 'tokens')
+    if tokens != "":
         config.set('Params', 'tokens', str(tokens))
         write_config()
 
-def set_temperature():
-    temperature = float(input("temperature [default : " + config.get('Params', 'temperature') + "]: "))
-    if temperature:
+def set_temperature(temperature = None):
+    if temperature is None:
+        print (c("Enter a decimal number between 0 and 1", "yellow"))
+        try:
+            temperature = float(input("temperature [default : " + config.get('Params', 'temperature') + "]: "))
+        except ValueError:
+            temperature = config.get('Params', 'temperature')
+    if temperature !="":
         config.set('Params', 'temperature', str(temperature))
         write_config()
 
-def set_model():
-    for k in models.keys():
-        print (k, ":", models[k])
-    modelid = int(input("model [default : " + config.get('Params', 'model') + "]: "))
-    if modelid:
-        config.set('Params', 'model', str(models[modelid]))
+def set_model(model = None):
+    if model is None:
+        print (c("Enter the number of your choosen model:", "yellow"))
+        for k in models:
+            print (models.index(k), ":", k)
+        modelid = int(input("model [default : " + config.get('Params', 'model') + "]: "))
+        if modelid:
+            config.set('Params', 'model', str(models[modelid]))
+            write_config()
+        return models[modelid]
+    else:
+        config.set('Params', 'model', str(model))
         write_config()
-    return models[modelid]
+        return model
+
+def set_prompt():
+    prompt = c(config.get('Params', 'model'), 'green')
+    prompt += "> "
+    return prompt
+
+def print_config():
+    print('\n\t'.join([
+        c('Configuration set:', 'blue'),
+        'model: ' + config.get('Params', 'model'),
+        'temperature: ' + config.get('Params', 'temperature'),
+        'max_tokens: ' + config.get('Params', 'tokens'),''
+    ]))
+
+def print_version():
+    print('\n'.join([
+        c('AskGPT version: ', 'blue') + str(_VERSION) + ' ' + str(_RELDATE),
+        'https://github.com/pguimier/askgpt',''
+    ]))
+
+def print_about():
+    print('\n\t'.join([
+        c('Useful links: ', 'blue'),
+        'Account usage: https://platform.openai.com/account/usage',
+        'OpenAI availability: https://status.openai.com/'
+    ]))
+
+def c(myString, color):
+    if is_termcolor:
+        return colored(myString, color)
+    else:
+        return myString
 
 def askgpt (query):
     url = "https://api.openai.com/v1/engines/" + config.get('Params', 'model') + "/completions"
@@ -110,42 +175,112 @@ def save_log(query, response):
         f.write(line)
         f.write('\n')
 
-def main():
-    while True:
-        read_config()
-        model = config.get('Params', 'model')
-        try:
-            query = input(model + ": ")
-            if query=="q" or query=="quit" :
-                print("Quit")
-                break;
-            elif query=="" or query=="help" :
-                print("Commands : help, api, model, tokens, temperature or quit")
-                print("Otherwise, ask your question")
-                continue
-                break
-            elif query=="api":
-                set_apikey()
-                continue
-                break
-            elif query=="model" or query=="models":
-                set_model()
-                continue
-                break
-            elif query=="token" or query=="tokens":
-                set_tokens()
-                continue
-                break
-            elif query=="temp" or query=="temperature":
-                set_temperature()
-                continue
-                break
-            else:
-                askgpt(query)
-                continue
-        except ValueError:
-            print("Invalid")
-            continue
+class AskGPT(cmd.Cmd):
+
+    #~ config = []
+    list = ["test-dashed","test-double-dashed","test-minus","nodash"]
+
+    intro = c("Ask me anything.", "yellow")
+
+
+    def default(self, query):
+        askgpt(query)
+
+    def do_api(self, line):
+        set_apikey()
+
+    def do_tokens(self, tokens):
+        if tokens and int(tokens) <= 4096 :
+            set_tokens(tokens)
+        else :
+            set_tokens()
+
+    def do_temperature(self, temperature):
+        if temperature and float(temperature) <= 1 :
+            set_temperature(temperature)
+        else :
+            set_temperature()
+
+    def do_model(self, model):
+        global models
+        if model and model in models:
+            set_model(model)
+            print (model + " selected")
+        else :
+            model = set_model()
+        self.prompt = set_prompt()
+
+    def complete_model(self, text, line, begidx, endidx):
+        global models
+        if not text:
+            completions = models[:]
+        else:
+            completions = [
+                f
+                for f in models
+                if f.startswith(text)
+            ]
+        return completions
+
+    def do_info (self, line):
+        print_version()
+        print_config()
+        print_about()
+
+    def help_model(self):
+        print('\n'.join([
+            'model [model]',
+            'Set the model in configuration',
+        ]))
+
+    def help_tokens(self):
+        print('\n'.join([
+            'tokens [max_tokens]',
+            'Set the max_tokens in configuration',
+        ]))
+
+    def help_temperature(self):
+        print('\n'.join([
+            'temperature [temperature]',
+            'Set the temperature in configuration',
+        ]))
+
+    def help_api(self):
+        print('\n'.join([
+            'api',
+            'Set the OpenAI API key in configuration',
+        ]))
+
+    def help_info(self):
+        print('\n'.join([
+            'info',
+            'Display configuration information',
+        ]))
+
+    def help_default(self):
+        print('\n'.join([
+            'query Your query',
+            'Send your query to GPT3',
+        ]))
+
+    def do_exit(self, line):
+        print("\n")
+        return True
+
+    def do_quit(self, line):
+        print("\n")
+        return True
+    def do_EOF(self, line):
+        print("\n")
+        return True
 
 if __name__ == "__main__":
-    main()
+    myGpt = AskGPT()
+    read_config()
+    myGpt.config = config
+    myGpt.prompt = set_prompt()
+    import sys
+    if len(sys.argv) > 1:
+        myGpt.onecmd(' '.join(sys.argv[1:]))
+    else:
+        myGpt.cmdloop()
