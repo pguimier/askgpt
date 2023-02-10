@@ -2,6 +2,8 @@
 
 A console interface to query openAI models
 
+![Terminal animation](https://raw.githubusercontent.com/pguimier/askgpt/main/termtosvg_v0.2.svg)
+
 ## Description
 
 Write a prompt to ask your questions to the OpenAI models; You can choose your model from those available.
