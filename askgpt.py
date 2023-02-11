@@ -20,8 +20,8 @@ try:
 except ImportError:
     pass
 
-_VERSION = 0.2
-_RELDATE = "2023-02-10"
+_VERSION = 0.3
+_RELDATE = "2023-02-11"
 
 userhome = os.path.expanduser('~')
 configPath = userhome + '/.config/askgpt/'
@@ -29,6 +29,7 @@ configFile = configPath + 'config.cfg'
 config = configparser.ConfigParser()
 
 models = [
+    "[default]",
     "text-ada-001",
     "text-babbage-001",
     "text-curie-001",
@@ -177,11 +178,7 @@ def save_log(query, response):
 
 class AskGPT(cmd.Cmd):
 
-    #~ config = []
-    list = ["test-dashed","test-double-dashed","test-minus","nodash"]
-
     intro = c("Ask me anything.", "yellow")
-
 
     def default(self, query):
         askgpt(query)
