@@ -58,7 +58,7 @@ Configuration is stored in ~/.config/askgpt/config.cfg
 ## Tips & tricks
 
 - In [https://github.com/termux Termux](https://github.com/termux), add askgpt.py to ~/.shortcuts directory to invoke it from the home widget (using termux-widget)
-- `$ cat myscript.lua | askgpt.py -m 5 -t 500 -r 0.5 "Find why I got error messages in following script: "`
+- `$ askgpt.py -m 5 -t 500 -r 0.5 "Find why I got error messages in following script: " $(cat myscript.lua)`
 
 ## Dependencies
 

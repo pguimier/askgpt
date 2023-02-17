@@ -20,7 +20,7 @@ try:
 except ImportError:
     pass
 
-_VERSION = 0.2.1
+_VERSION = 0.2_1
 _RELDATE = "2023-02-16"
 
 userhome = os.path.expanduser('~')
