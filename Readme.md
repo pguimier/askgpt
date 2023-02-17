@@ -1,16 +1,14 @@
 # askGPT
 
-A console interface to query openAI models
+A console TUI/CLI to query openAI models
 
 ![Terminal animation](https://raw.githubusercontent.com/pguimier/askgpt/main/termtosvg_v0.2.svg)
 
 ## Description
 
-Write a prompt to ask your questions to the OpenAI models; You can choose your model from those available.
+Shell-like interface to send queries to OpenAI models.
 
-However, it is necessary to enter your API key which can be generated here:
-
-https://beta.openai.com/account/api-keys
+It is necessary to enter your API key which can be generated here: https://beta.openai.com/account/api-keys
 
 ## Utilisation
 
@@ -44,11 +42,23 @@ In CLI mode, commands and queries are enabled :
 
 `$ askgpt.py tokens 256`
 
-`$ askgpt.py "What is the capital of India ?"`
+`$ askgpt.py info`
+
+`$ askgpt.py -t 120 -r 0.2 -m 2 "What is the capital of India ?"`
+
+Options are described by invoquing :
+
+`$ askgpt.py --help`
+
 
 A log of conversations is saved in a file : ~/askgptlog.json
 
 Configuration is stored in ~/.config/askgpt/config.cfg
+
+## Tips & tricks
+
+- In [https://github.com/termux Termux](https://github.com/termux), add askgpt.py to ~/.shortcuts directory to invoke it from the home widget (using termux-widget)
+- `$ cat myscript.lua | askgpt.py -m 5 -t 500 -r 0.5 "Find why I got error messages in following script: "`
 
 ## Dependencies
 
@@ -57,12 +67,21 @@ Configuration is stored in ~/.config/askgpt/config.cfg
 - Configparser module
 - requests module
 - Cmd module
+- argparse module
 
 Optional modules:
 - gnureadline
 - termcolor
 
 ## History
+
+### V0.2.1 - 2023-02-16
+
+CLI with options
+
+- [x] Options to change temperature, max_tokens and model directly on the command line, before sending request
+- [x] Bug fix (model 0 is not a change)
+- [ ] Insertion / Edition modes not implemented yet
 
 ### V0.2 - 2023-02-10
 

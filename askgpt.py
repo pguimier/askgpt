@@ -20,8 +20,8 @@ try:
 except ImportError:
     pass
 
-_VERSION = 0.3
-_RELDATE = "2023-02-11"
+_VERSION = 0.2.1
+_RELDATE = "2023-02-16"
 
 userhome = os.path.expanduser('~')
 configPath = userhome + '/.config/askgpt/'
@@ -126,7 +126,7 @@ def print_config():
 
 def print_version():
     print('\n'.join([
-        c('AskGPT version: ', 'blue') + str(_VERSION) + ' ' + str(_RELDATE),
+        c('askGPT version: ', 'blue') + str(_VERSION) + ' ' + str(_RELDATE),
         'https://github.com/pguimier/askgpt',''
     ]))
 
@@ -144,29 +144,20 @@ def c(myString, color):
         return myString
 
 def askgpt (query):
-    url = "https://api.openai.com/v1/engines/" + config.get('Params', 'model') + "/completions"
+    url = "https://api.openai.com/v1/completions"
     read_config()
     api_key = config.get('Api', 'key')
-    model = config.get('Params', 'model')
-    temperature = float(config.get('Params', 'temperature'))
-    tokens = int(config.get('Params', 'tokens'))
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-
-    # Definition of the query
-    request_body = "{"
-    request_body += f'"prompt": "{query}",'
-    request_body += f'"max_tokens": {tokens},'
-    request_body += f'"temperature": {temperature}'
-    request_body += "}"
-
-    # Sending the request
-    response = requests.post(url, headers=headers, data=request_body)
+    request_body = {
+        "prompt": query,
+        "model": config.get('Params', 'model'),
+        "max_tokens": int(config.get('Params', 'tokens')),
+        "temperature": float(config.get('Params', 'temperature')),
+    }
+    response = requests.post(url, headers=headers, json=request_body)
 
     save_log(request_body, response.text)
-
     reponsetext = json.loads(response.text)['choices'][0]['text']
-
-    # Display of the answer
     print(reponsetext)
 
 def save_log(query, response):
@@ -260,6 +251,9 @@ class AskGPT(cmd.Cmd):
             'Send your query to GPT3',
         ]))
 
+    def emptyline(self):
+        pass
+
     def do_exit(self, line):
         print("\n")
         return True
@@ -274,10 +268,33 @@ class AskGPT(cmd.Cmd):
 if __name__ == "__main__":
     myGpt = AskGPT()
     read_config()
-    myGpt.config = config
-    myGpt.prompt = set_prompt()
+    command = ''
+
     import sys
     if len(sys.argv) > 1:
-        myGpt.onecmd(' '.join(sys.argv[1:]))
+        import argparse
+        parser = argparse.ArgumentParser(description='A console interface to query openAI models')
+        parser.add_argument('-t','--tokens', type=int, help='max tokens used')
+        parser.add_argument('-r','--temperature', type=float, help='temperature required for the response')
+        parser.add_argument('-m','--model', type=int, choices=range(1, 7), help='model used (1:ada, 2:babbage, 3:curie, 4:davinci, 5:code-davinci, 6:code-cushman)')
+        parser.add_argument('command', nargs='*', help='command to execute')
+        args = parser.parse_args()
+
+        if args.tokens is not None:
+            set_tokens(args.tokens)
+
+        if args.temperature is not None:
+            set_temperature(args.temperature)
+
+        if args.model is not None:
+            set_model(str(models[args.model]))
+
+        command = ' '.join(args.command)
+
+    myGpt.config = config
+    myGpt.prompt = set_prompt()
+
+    if len(command) > 1 :
+        myGpt.onecmd(command)
     else:
         myGpt.cmdloop()
