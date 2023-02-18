@@ -20,8 +20,8 @@ try:
 except ImportError:
     pass
 
-_VERSION = 0.2_1
-_RELDATE = "2023-02-16"
+_VERSION = 0.2_2
+_RELDATE = "2023-02-18"
 
 userhome = os.path.expanduser('~')
 configPath = userhome + '/.config/askgpt/'
@@ -277,6 +277,7 @@ if __name__ == "__main__":
         parser.add_argument('-t','--tokens', type=int, help='max tokens used')
         parser.add_argument('-r','--temperature', type=float, help='temperature required for the response')
         parser.add_argument('-m','--model', type=int, choices=range(1, 7), help='model used (1:ada, 2:babbage, 3:curie, 4:davinci, 5:code-davinci, 6:code-cushman)')
+        parser.add_argument('-s','--stdin', action='store_true', help='if stdin has to be sent')
         parser.add_argument('command', nargs='*', help='command to execute')
         args = parser.parse_args()
 
@@ -289,7 +290,13 @@ if __name__ == "__main__":
         if args.model is not None:
             set_model(str(models[args.model]))
 
-        command = ' '.join(args.command)
+        # in case datas are piped via stdin
+        multiline_text = ''
+        if args.stdin :
+            for line in sys.stdin:
+                multiline_text += "\n" + line
+
+        command = ' '.join(args.command).replace('\\n', '\n') + multiline_text
 
     myGpt.config = config
     myGpt.prompt = set_prompt()

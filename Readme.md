@@ -57,8 +57,13 @@ Configuration is stored in ~/.config/askgpt/config.cfg
 
 ## Tips & tricks
 
-- In [https://github.com/termux Termux](https://github.com/termux), add askgpt.py to ~/.shortcuts directory to invoke it from the home widget (using termux-widget)
-- `$ askgpt.py -m 5 -t 500 -r 0.5 "Find why I got error messages in following script: " $(cat myscript.lua)`
+- In [hTermux](https://github.com/termux), add askgpt.py to ~/.shortcuts directory to invoke it from the home widget (using termux-widget)
+- To give a file in stdin, use :
+	`$ askgpt.py -m 5 -t 500 -r 0.5 "Find why I got error messages in following script: " $(cat myscript.lua)`
+	or
+	`$ cat myscript.lua | askgpt.py --model 5 --tokens 500 --temperature 0.5 --stdin "Find why I got error messages in following script: "`
+- Use [bat](https://github.com/sharkdp/bat) to output response with color and line numbers:
+	`$ askgpt.py -m 5 -t 122 -r 0.2 '"""\nAsk the user for his name and say "Hello"\n"""' | bat -l python`
 
 ## Dependencies
 
@@ -75,6 +80,13 @@ Optional modules:
 
 ## History
 
+### V0.2.2 - 2023-02-18
+
+CLI with options
+
+- [x] Options to send stdin, before sending request
+- [x] Bug fix
+
 ### V0.2.1 - 2023-02-16
 
 CLI with options
@@ -88,7 +100,7 @@ CLI with options
 Colorful GPT shell or CLI
 
 - [x] Shell-like prompt (with recallable commands and queries)
-- [x] Touch of colors (optionnal with termcolor)
+- [x] Touch of colors (optional with termcolor)
 - [x] Initial CLI for commands and queries
 - [ ] Can't recall commands/queries over sessions
 - [ ] Can't autocomplete models (because of dashes)
