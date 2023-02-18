@@ -2,7 +2,7 @@
 
 A console TUI/CLI to query openAI models
 
-![Terminal animation](https://raw.githubusercontent.com/pguimier/askgpt/main/termtosvg_v0.2.svg)
+![Terminal animation](https://raw.githubusercontent.com/pguimier/askgpt/main/termtosvg_v0.2.2.svg)
 
 ## Description
 
