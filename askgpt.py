@@ -20,8 +20,8 @@ try:
 except ImportError:
     pass
 
-_VERSION = 0.2_2
-_RELDATE = "2023-02-18"
+_VERSION = 0.2_3
+_RELDATE = "2023-02-19"
 
 userhome = os.path.expanduser('~')
 configPath = userhome + '/.config/askgpt/'
