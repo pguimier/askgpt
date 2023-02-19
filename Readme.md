@@ -68,17 +68,28 @@ Configuration is stored in ~/.config/askgpt/config.cfg
 ## Dependencies
 
 - Python 3
-- Json module
-- Configparser module
-- requests module
-- Cmd module
-- argparse module
+
+Required modules :
+- Json
+- Configparser
+- requests
+- Cmd
+- argparse
+- sys
+- time
 
 Optional modules:
 - gnureadline
 - termcolor
+- simple_term_menu for history display
 
 ## History
+
+### V0.3 - 2023-02-19
+
+History display version
+
+- [x] Previous queries and responses can be recalled
 
 ### V0.2.3 - 2023-02-19
 

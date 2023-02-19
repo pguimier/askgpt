@@ -5,6 +5,8 @@ import requests
 import configparser
 import os
 import cmd
+import sys
+import time
 
 is_termcolor = False
 try:
@@ -15,12 +17,18 @@ except ImportError:
 
 try:
     import gnureadline
-    import sys
     sys.modules['readline'] = gnureadline
 except ImportError:
     pass
 
-_VERSION = 0.2_3
+is_termmenu = False
+try:
+    from simple_term_menu import TerminalMenu
+    is_termmenu = True
+except ImportError:
+    pass
+
+_VERSION = 0.3_0
 _RELDATE = "2023-02-19"
 
 userhome = os.path.expanduser('~')
@@ -158,7 +166,8 @@ def askgpt (query):
     }
     response = requests.post(url, headers=headers, json=request_body)
 
-    save_log(request_body, response.text)
+    #~ save_log(request_body, response.text)
+    save_log(request_body, json.loads(response.text))
     reponsetext = "\n".join(json.loads(response.text)['choices'][0]['text'].split('\n')[2:])
     print(reponsetext)
 
@@ -168,6 +177,45 @@ def save_log(query, response):
     with open(userhome + '/askgptlog.json', 'a') as f:
         f.write(line)
         f.write('\n')
+
+def read_log():
+    logs = []
+    with open(userhome + '/askgptlog.json', 'r') as f:
+        Lines = f.readlines()
+    for line in Lines:
+        logs.append(line.strip())
+    return logs
+
+def list_history():
+    if not is_termmenu:
+        print ("python module simple-term-menu required")
+        return
+    titles = []
+    Logs = read_log()
+    for log in Logs:
+        jsonlog = json.loads(log)
+        titles.append(
+            time.ctime(jsonlog['response']['created']) + " - " +
+            jsonlog['response']['model'] + " - " +
+            str(jsonlog['response']['usage']['total_tokens']) +
+            " tokens" +
+            "|" + c(jsonlog['query']['prompt'], 'yellow') + "\n" +
+            "\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:])
+            )
+    terminal_menu = TerminalMenu(titles, preview_command=preview_query, preview_size=0.5)
+    menu_entry_index = terminal_menu.show()
+    display_hist(menu_entry_index)
+
+def preview_query (test):
+    return test
+
+def display_hist(index):
+    log = read_log()[index]
+    jsonlog = json.loads(log)
+    out=c(jsonlog['query']['prompt'], 'yellow') + "\n"
+    out+=c("\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:]), 'white') + "\n"
+    print("\033c", end='') # clean screen
+    print (out)
 
 class AskGPT(cmd.Cmd):
 
@@ -218,6 +266,9 @@ class AskGPT(cmd.Cmd):
         print_version()
         print_config()
         print_about()
+
+    def do_history (self, line):
+        list_history()
 
     def help_model(self):
         print('\n'.join([
