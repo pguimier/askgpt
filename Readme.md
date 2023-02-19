@@ -80,6 +80,14 @@ Optional modules:
 
 ## History
 
+### V0.2.3 - 2023-02-19
+
+CLI with options
+
+- [x] Options to repeat prompt at output
+- [x] Commands feedback additions
+- [x] Colors in help
+
 ### V0.2.2 - 2023-02-18
 
 CLI with options

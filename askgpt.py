@@ -84,6 +84,7 @@ def set_tokens(tokens = None):
     if tokens != "":
         config.set('Params', 'tokens', str(tokens))
         write_config()
+    return tokens
 
 def set_temperature(temperature = None):
     if temperature is None:
@@ -95,6 +96,7 @@ def set_temperature(temperature = None):
     if temperature !="":
         config.set('Params', 'temperature', str(temperature))
         write_config()
+    return temperature
 
 def set_model(model = None):
     if model is None:
@@ -157,7 +159,7 @@ def askgpt (query):
     response = requests.post(url, headers=headers, json=request_body)
 
     save_log(request_body, response.text)
-    reponsetext = json.loads(response.text)['choices'][0]['text']
+    reponsetext = "\n".join(json.loads(response.text)['choices'][0]['text'].split('\n')[2:])
     print(reponsetext)
 
 def save_log(query, response):
@@ -181,22 +183,24 @@ class AskGPT(cmd.Cmd):
         if tokens and int(tokens) <= 4096 :
             set_tokens(tokens)
         else :
-            set_tokens()
+            tokens = set_tokens()
+        print (c("max_tokens set : " + str(tokens), "yellow"))
 
     def do_temperature(self, temperature):
         if temperature and float(temperature) <= 1 :
             set_temperature(temperature)
         else :
-            set_temperature()
+            temperature = set_temperature()
+        print (c("temperature set : " + str(temperature), "yellow"))
 
     def do_model(self, model):
         global models
         if model and model in models:
             set_model(model)
-            print (model + " selected")
         else :
             model = set_model()
         self.prompt = set_prompt()
+        print (c(model + " selected", "yellow"))
 
     def complete_model(self, text, line, begidx, endidx):
         global models
@@ -217,38 +221,38 @@ class AskGPT(cmd.Cmd):
 
     def help_model(self):
         print('\n'.join([
-            'model [model]',
-            'Set the model in configuration',
+            c('model [model]', 'yellow'),
+            c('Set the model in configuration', 'blue'),
         ]))
 
     def help_tokens(self):
         print('\n'.join([
-            'tokens [max_tokens]',
-            'Set the max_tokens in configuration',
+            c('tokens [max_tokens]', 'yellow'),
+            c('Set the max_tokens in configuration', 'blue'),
         ]))
 
     def help_temperature(self):
         print('\n'.join([
-            'temperature [temperature]',
-            'Set the temperature in configuration',
+            c('temperature [temperature]', 'yellow'),
+            c('Set the temperature in configuration', 'blue'),
         ]))
 
     def help_api(self):
         print('\n'.join([
-            'api',
-            'Set the OpenAI API key in configuration',
+            c('api', 'yellow'),
+            c('Set the OpenAI API key in configuration', 'blue'),
         ]))
 
     def help_info(self):
         print('\n'.join([
-            'info',
-            'Display configuration information',
+            c('info', 'yellow'),
+            c('Display configuration information', 'blue'),
         ]))
 
     def help_default(self):
         print('\n'.join([
-            'query Your query',
-            'Send your query to GPT3',
+            c('query Your query', 'yellow'),
+            c('Send your query to GPT3', 'blue'),
         ]))
 
     def emptyline(self):
@@ -273,12 +277,13 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
         import argparse
-        parser = argparse.ArgumentParser(description='A console interface to query openAI models')
-        parser.add_argument('-t','--tokens', type=int, help='max tokens used')
-        parser.add_argument('-r','--temperature', type=float, help='temperature required for the response')
-        parser.add_argument('-m','--model', type=int, choices=range(1, 7), help='model used (1:ada, 2:babbage, 3:curie, 4:davinci, 5:code-davinci, 6:code-cushman)')
-        parser.add_argument('-s','--stdin', action='store_true', help='if stdin has to be sent')
-        parser.add_argument('command', nargs='*', help='command to execute')
+        parser = argparse.ArgumentParser(description=c('A console interface to query openAI models', 'yellow'))
+        parser.add_argument('-t','--tokens', type=int, help=c('max tokens used', 'blue'))
+        parser.add_argument('-r','--temperature', type=float, help=c('temperature required for the response', 'blue'))
+        parser.add_argument('-m','--model', type=int, choices=range(1, 7), help=c('model used (1:ada, 2:babbage, 3:curie, 4:davinci, 5:code-davinci, 6:code-cushman)', 'blue'))
+        parser.add_argument('-s','--stdin', action='store_true', help=c('if stdin has to be sent', 'blue'))
+        parser.add_argument('-p','--prompt-repeat', action='store_true', help=c('repeat prompt at output', 'blue'))
+        parser.add_argument('command', nargs='*', help=c('command to execute', 'blue'))
         args = parser.parse_args()
 
         if args.tokens is not None:
@@ -297,6 +302,10 @@ if __name__ == "__main__":
                 multiline_text += "\n" + line
 
         command = ' '.join(args.command).replace('\\n', '\n') + multiline_text
+
+        if args.prompt_repeat :
+            print (command)
+
 
     myGpt.config = config
     myGpt.prompt = set_prompt()
