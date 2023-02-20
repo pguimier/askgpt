@@ -36,6 +36,10 @@ Then just ask your question to the selected model:
 
 `text-curie-001> Who is Marie Curie ?`
 
+Previous queries and responses are availables suing `history` command:
+
+![History example](https://raw.githubusercontent.com/pguimier/askgpt/main/askgpt_3.0_history.png)
+
 In CLI mode, commands and queries are enabled :
 
 `$ askgpt.py model text-davinci-003`
@@ -43,6 +47,8 @@ In CLI mode, commands and queries are enabled :
 `$ askgpt.py tokens 256`
 
 `$ askgpt.py info`
+
+`$ askgpt.py history`
 
 `$ askgpt.py -t 120 -r 0.2 -m 2 "What is the capital of India ?"`
 

@@ -166,7 +166,6 @@ def askgpt (query):
     }
     response = requests.post(url, headers=headers, json=request_body)
 
-    #~ save_log(request_body, response.text)
     save_log(request_body, json.loads(response.text))
     reponsetext = "\n".join(json.loads(response.text)['choices'][0]['text'].split('\n')[2:])
     print(reponsetext)
@@ -195,19 +194,19 @@ def list_history():
     for log in Logs:
         jsonlog = json.loads(log)
         titles.append(
-            time.ctime(jsonlog['response']['created']) + " - " +
-            jsonlog['response']['model'] + " - " +
-            str(jsonlog['response']['usage']['total_tokens']) +
-            " tokens" +
-            "|" + c(jsonlog['query']['prompt'], 'yellow') + "\n" +
-            "\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:])
+            time.ctime(jsonlog['response']['created']) + " - "
+            + jsonlog['response']['model'] + " - "
+            + str(jsonlog['response']['usage']['total_tokens'])
+            + " tokens"
+            + "|" + c(jsonlog['query']['prompt'], 'yellow') + "\n"
+            + "\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:])
             )
-    terminal_menu = TerminalMenu(titles, preview_command=preview_query, preview_size=0.5)
+    terminal_menu = TerminalMenu(titles, preview_command=preview_text, preview_size=0.5)
     menu_entry_index = terminal_menu.show()
     display_hist(menu_entry_index)
 
-def preview_query (test):
-    return test
+def preview_text (text):
+    return text
 
 def display_hist(index):
     log = read_log()[index]
