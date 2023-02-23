@@ -1,60 +1,28 @@
 #!/usr/bin/python
+_VERSION = 0.4
+_RELDATE = "2023-02-23"
 
-import json
-import requests
-import configparser
-import os
-import cmd
-import sys
-import time
-
+import json,requests,configparser,os,cmd,sys,time
 is_termcolor = False
-try:
-    from termcolor import colored, cprint
-    is_termcolor = True
-except ImportError:
-    pass
-
-try:
-    import gnureadline
-    sys.modules['readline'] = gnureadline
-except ImportError:
-    pass
-
+try:from termcolor import colored,cprint;is_termcolor=True
+except ImportError:pass
+try:import gnureadline;sys.modules['readline']=gnureadline
+except ImportError:pass
 is_termmenu = False
-try:
-    from simple_term_menu import TerminalMenu
-    is_termmenu = True
-except ImportError:
-    pass
-
-_VERSION = 0.3_0
-_RELDATE = "2023-02-19"
+try:from simple_term_menu import TerminalMenu;is_termmenu=True
+except ImportError:pass
+is_pygments = False
+try:from pygments import formatters,highlight,lexers;from pygments.lexers import guess_lexer;is_pygments=True
+except ImportError:pass
 
 userhome = os.path.expanduser('~')
 configPath = userhome + '/.config/askgpt/'
 configFile = configPath + 'config.cfg'
 config = configparser.ConfigParser()
 
-models = [
-    "[default]",
-    "text-ada-001",
-    "text-babbage-001",
-    "text-curie-001",
-    "text-davinci-003",
-    "code-davinci-002",
-    "code-cushman-001",
-]
+models=['[default]','text-ada-001','text-babbage-001','text-curie-001','text-davinci-003','code-davinci-002','code-cushman-001']
 
-
-default_config = """
-[Api]
-key = OPENAI_API_KEY
-[Params]
-model = text-curie-001
-temperature = 0.5
-tokens = 1024
-"""
+default_config='\n[Api]\nkey = OPENAI_API_KEY\n[Params]\nmodel = text-curie-001\ntemperature = 0.5\ntokens = 1024\n'
 
 def read_config():
     try:
@@ -168,7 +136,16 @@ def askgpt (query):
 
     save_log(request_body, json.loads(response.text))
     reponsetext = "\n".join(json.loads(response.text)['choices'][0]['text'].split('\n')[2:])
-    print(reponsetext)
+    print(colorify_text(reponsetext))
+
+def colorify_text(text):
+  if is_pygments:
+    lexer = guess_lexer(text)
+    formatter = formatters.TerminalFormatter(bg="dark")  # dark or light
+    highlighted_file_content = highlight(text, lexer, formatter)
+    return highlighted_file_content
+  else:
+      return text
 
 def save_log(query, response):
     read_config()
@@ -198,7 +175,7 @@ def list_history():
             + jsonlog['response']['model'] + " - "
             + str(jsonlog['response']['usage']['total_tokens'])
             + " tokens"
-            + "|" + c(jsonlog['query']['prompt'], 'yellow') + "\n"
+            + "|" + jsonlog['query']['prompt'] + "\n"
             + "\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:])
             )
     terminal_menu = TerminalMenu(titles, preview_command=preview_text, preview_size=0.5)
@@ -206,19 +183,20 @@ def list_history():
     display_hist(menu_entry_index)
 
 def preview_text (text):
-    return text
+    return colorify_text(text)
 
 def display_hist(index):
     log = read_log()[index]
     jsonlog = json.loads(log)
     out=c(jsonlog['query']['prompt'], 'yellow') + "\n"
-    out+=c("\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:]), 'white') + "\n"
+    out+=colorify_text("\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:])) + "\n"
     print("\033c", end='') # clean screen
     print (out)
 
 class AskGPT(cmd.Cmd):
 
-    intro = c("Ask me anything.", "yellow")
+    intro = c("AskGPT " + str(_VERSION) + " (" + _RELDATE + ")\n", "red")
+    intro += c("Ask me anything.", "yellow")
 
     def default(self, query):
         askgpt(query)
@@ -324,7 +302,6 @@ if __name__ == "__main__":
     read_config()
     command = ''
 
-    import sys
     if len(sys.argv) > 1:
         import argparse
         parser = argparse.ArgumentParser(description=c('A console interface to query openAI models', 'yellow'))
@@ -355,7 +332,6 @@ if __name__ == "__main__":
 
         if args.prompt_repeat :
             print (command)
-
 
     myGpt.config = config
     myGpt.prompt = set_prompt()

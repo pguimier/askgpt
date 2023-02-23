@@ -40,6 +40,8 @@ Previous queries and responses are availables suing `history` command:
 
 ![History example](https://raw.githubusercontent.com/pguimier/askgpt/main/askgpt_3.0_history.png)
 
+![History screen with colored code](https://raw.githubusercontent.com/pguimier/askgpt/main/askgpt_0.4_CodeColor.png)
+
 In CLI mode, commands and queries are enabled :
 
 `$ askgpt.py model text-davinci-003`
@@ -88,8 +90,16 @@ Optional modules:
 - gnureadline
 - termcolor
 - simple_term_menu for history display
+- pygments for code colorization
 
 ## History
+
+### V0.4 - 2023-02-23
+
+Output colorified code Version
+
+- [x] Ouput responses are colorized using pygments module, in queries and history
+- [x] Code cleaning
 
 ### V0.3 - 2023-02-19
 
