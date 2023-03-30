@@ -1,6 +1,6 @@
 #!/usr/bin/python
-_VERSION = 0.4
-_RELDATE = "2023-02-23"
+_VERSION = 0.4.1
+_RELDATE = "2023-03-30"
 
 import json,requests,configparser,os,cmd,sys,time
 is_termcolor = False
@@ -20,7 +20,7 @@ configPath = userhome + '/.config/askgpt/'
 configFile = configPath + 'config.cfg'
 config = configparser.ConfigParser()
 
-models=['[default]','text-ada-001','text-babbage-001','text-curie-001','text-davinci-003','code-davinci-002','code-cushman-001']
+models = {'ada':'text-ada-001', 'babbage':'text-babbage-001', 'curie':'text-curie-001', 'davinci':'text-davinci-003'}
 
 default_config='\n[Api]\nkey = OPENAI_API_KEY\n[Params]\nmodel = text-curie-001\ntemperature = 0.5\ntokens = 1024\n'
 
@@ -76,14 +76,14 @@ def set_temperature(temperature = None):
 
 def set_model(model = None):
     if model is None:
-        print (c("Enter the number of your choosen model:", "yellow"))
-        for k in models:
-            print (models.index(k), ":", k)
-        modelid = int(input("model [default : " + config.get('Params', 'model') + "]: "))
-        if modelid:
-            config.set('Params', 'model', str(models[modelid]))
+        print (c("Enter the name of your choosen model:", "yellow"))
+        for k, v in models.items():
+            print (k, ":", v)
+        modelname = input("model [default : " + config.get('Params', 'model') + "]: ")
+        if modelname:
+            config.set('Params', 'model', str(models[modelname]))
             write_config()
-        return models[modelid]
+        return models[modelname]
     else:
         config.set('Params', 'model', str(model))
         write_config()
@@ -121,7 +121,7 @@ def c(myString, color):
     else:
         return myString
 
-def askgpt (query):
+def askgpt(query):
     url = "https://api.openai.com/v1/completions"
     read_config()
     api_key = config.get('Api', 'key')
@@ -135,8 +135,17 @@ def askgpt (query):
     response = requests.post(url, headers=headers, json=request_body)
 
     save_log(request_body, json.loads(response.text))
-    reponsetext = "\n".join(json.loads(response.text)['choices'][0]['text'].split('\n')[2:])
-    print(colorify_text(reponsetext))
+
+    response_json = json.loads(response.text)
+
+    if 'choices' in response_json and len(response_json['choices']) > 0:
+        reponsetext = "\n".join(response_json['choices'][0]['text'].split('\n')[2:])
+        print(colorify_text(reponsetext))
+    elif 'error' in response_json:
+        print(f"Error: {response_json['error']['message']}")
+    else:
+        print("Unknown error occurred.")
+
 
 def colorify_text(text):
   if is_pygments:
@@ -166,21 +175,34 @@ def list_history():
     if not is_termmenu:
         print ("python module simple-term-menu required")
         return
+
     titles = []
     Logs = read_log()
     for log in Logs:
         jsonlog = json.loads(log)
-        titles.append(
-            time.ctime(jsonlog['response']['created']) + " - "
-            + jsonlog['response']['model'] + " - "
-            + str(jsonlog['response']['usage']['total_tokens'])
-            + " tokens"
-            + "|" + jsonlog['query']['prompt'] + "\n"
-            + "\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:])
+        try:
+            titles.append(
+                time.ctime(jsonlog['response']['created']) + " - "
+                + jsonlog['response']['model'] + " - "
+                + str(jsonlog['response']['usage']['total_tokens'])
+                + " tokens"
+                + "|" + jsonlog['query']['prompt'] + "\n"
+                + "\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:])
             )
+        except Exception as e:
+            titles.append(
+                "Error: " + jsonlog['response']['error']['type']
+                + "|" + jsonlog['query']['prompt'] + "\n"
+                + jsonlog['response']['error']['message'] + "\n"
+                + "model : " + jsonlog['query']['model'] + "\n"
+                + "max_tokens : " + str(jsonlog['query']['max_tokens']) + "\n"
+                + "temperature : " + str(jsonlog['query']['temperature']) + "\n"
+            )
+
     terminal_menu = TerminalMenu(titles, preview_command=preview_text, preview_size=0.5)
     menu_entry_index = terminal_menu.show()
     display_hist(menu_entry_index)
+
 
 def preview_text (text):
     return colorify_text(text)
@@ -188,8 +210,16 @@ def preview_text (text):
 def display_hist(index):
     log = read_log()[index]
     jsonlog = json.loads(log)
-    out=c(jsonlog['query']['prompt'], 'yellow') + "\n"
-    out+=colorify_text("\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:])) + "\n"
+    out = c(jsonlog['query']['prompt'], 'yellow') + "\n"
+    if 'error' in jsonlog['response']:
+        out += f"{c('Model:', 'yellow')} {jsonlog['query']['model']}\n"
+        out += f"{c('max_tokens:', 'yellow')} {jsonlog['query']['max_tokens']}\n"
+        out += f"{c('temperature:', 'yellow')} {jsonlog['query']['temperature']}\n"
+        out += f"{c('Error:', 'red')} {jsonlog['response']['error']['type']}\n"
+        out += f"{c(jsonlog['response']['error']['message'], 'red')}\n"
+    else:
+        out += colorify_text("\n".join(jsonlog['response']['choices'][0]['text'].split('\n')[2:])) + "\n"
+        out += f"{c('Model:', 'yellow')} {jsonlog['response']['model']}\n"
     print("\033c", end='') # clean screen
     print (out)
 
@@ -230,11 +260,11 @@ class AskGPT(cmd.Cmd):
     def complete_model(self, text, line, begidx, endidx):
         global models
         if not text:
-            completions = models[:]
+            completions = models.keys()
         else:
             completions = [
                 f
-                for f in models
+                for f in models.keys()
                 if f.startswith(text)
             ]
         return completions
@@ -307,7 +337,7 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser(description=c('A console interface to query openAI models', 'yellow'))
         parser.add_argument('-t','--tokens', type=int, help=c('max tokens used', 'blue'))
         parser.add_argument('-r','--temperature', type=float, help=c('temperature required for the response', 'blue'))
-        parser.add_argument('-m','--model', type=int, choices=range(1, 7), help=c('model used (1:ada, 2:babbage, 3:curie, 4:davinci, 5:code-davinci, 6:code-cushman)', 'blue'))
+        parser.add_argument('-m','--model', type=string, choices=range(1, 7), help=c('model used (ada, babbage, curie, davinci,)', 'blue'))
         parser.add_argument('-s','--stdin', action='store_true', help=c('if stdin has to be sent', 'blue'))
         parser.add_argument('-p','--prompt-repeat', action='store_true', help=c('repeat prompt at output', 'blue'))
         parser.add_argument('command', nargs='*', help=c('command to execute', 'blue'))
